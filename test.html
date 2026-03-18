@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test kontroli czasu online</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    height: 100vh;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4e73df, #1cc88a);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 95%;
+    max-width: 700px;
+    height: 95vh;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ===== EKRAN STARTOWY ===== */
+.start-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+}
+
+.start-screen h1 {
+    font-size: 26px;
+    margin-bottom: 20px;
+    color: #4e73df;
+}
+
+.start-screen p {
+    margin-bottom: 30px;
+    font-size: 16px;
+    color: #555;
+}
+
+.start-btn {
+    padding: 15px 40px;
+    font-size: 18px;
+    border: none;
+    border-radius: 12px;
+    background: #4e73df;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.start-btn:hover {
+    transform: scale(1.05);
+}
+
+/* ===== Pasek postępu ===== */
+.progress-container {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: none;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4e73df, #1cc88a);
+    transition: width 0.4s ease;
+}
+
+/* ===== Test ===== */
+.content {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.slide-out {
+    transform: translateX(-40px);
+    opacity: 0;
+}
+
+.slide-in {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.question {
+    font-size: 22px;
+    margin-bottom: 30px;
+    min-height: 60px;
+}
+
+.answers button {
+    width: 100%;
+    padding: 15px;
+    margin: 10px 0;
+    font-size: 16px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.answers button:active {
+    transform: scale(0.95);
+}
+
+.yes {
+    background: #4e73df;
+    color: white;
+}
+
+.no {
+    background: #858796;
+    color: white;
+}
+
+.answers button:hover {
+    transform: scale(1.03);
+}
+
+/* ===== Wynik ===== */
+.result {
+    display: none;
+    text-align: center;
+    animation: fadeIn 0.6s ease forwards;
+    padding: 10px 5px;
+}
+
+.result h2 {
+    font-size: 28px;
+    margin-bottom: 15px;
+}
+
+.result h3 {
+    margin: 15px 0;
+    font-size: 20px;
+}
+
+.result p {
+    margin: 12px 0;
+    line-height: 1.6;
+}
+
+.result strong {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.restart {
+    margin-top: 20px;
+    padding: 12px 20px;
+    border: none;
+    background: #4e73df;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* ===== Animowany wskaźnik ===== */
+.risk-graphic {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    margin: 20px auto 25px auto;
+}
+
+.risk-graphic svg {
+    transform: rotate(-90deg);
+}
+
+.risk-graphic circle {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+}
+
+.bg-circle {
+    stroke: #e9ecef;
+}
+
+.progress-circle {
+    stroke: #4e73df;
+    stroke-dasharray: 440;
+    stroke-dashoffset: 440;
+    transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
+}
+
+.risk-percent {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    font-weight: bold;
+}
+
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(20px);}
+    to {opacity: 1; transform: translateY(0);}
+}
+
+.low { color: #155724; }
+.medium { color: #856404; }
+.high { color: #721c24; }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ===== START ===== -->
+    <div class="start-screen" id="startScreen">
+        <h1>Test: Czy kontrolujesz swój czas online?</h1>
+        <p>Odpowiedz na 10 pytań i sprawdź swój wynik.</p>
+        <button class="start-btn" onclick="startTest()">START</button>
+    </div>
+
+    <!-- Pasek postępu -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Test -->
+    <div class="content slide-in" id="content">
+        <div class="question" id="questionText"></div>
+        <div class="answers">
+            <button class="yes" onclick="answer(1)">TAK</button>
+            <button class="no" onclick="answer(0)">NIE</button>
+        </div>
+    </div>
+
+    <!-- Wynik -->
+    <div class="result" id="result"></div>
+
+</div>
+
+<script>
+const questions = [
+"Rezygnujesz z ważnych obowiązków dla internetu?",
+"Korzystasz z internetu, by poprawić sobie humor?",
+"Potrzebujesz coraz więcej czasu online?",
+"Szukasz nowych form rozrywki online?",
+"Czujesz irytację bez internetu?",
+"Masz gorsze samopoczucie przy ograniczeniu?",
+"Kłócisz się o czas w internecie?",
+"Zaniedbujesz obowiązki szkolne?",
+"Nie udaje Ci się ograniczyć korzystania?",
+"Nie potrafisz ograniczyć mimo świadomości skutków?"
+];
+
+let currentQuestion = 0;
+let score = 0;
+
+const questionText = document.getElementById("questionText");
+const progressBar = document.getElementById("progressBar");
+const resultDiv = document.getElementById("result");
+const contentDiv = document.getElementById("content");
+const startScreen = document.getElementById("startScreen");
+const progressContainer = document.getElementById("progressContainer");
+
+function startTest() {
+    startScreen.style.display = "none";
+    contentDiv.style.display = "flex";
+    progressContainer.style.display = "block";
+    showQuestion();
+}
+
+function showQuestion() {
+    questionText.textContent = (currentQuestion + 1) + ". " + questions[currentQuestion];
+    progressBar.style.width = (currentQuestion / questions.length) * 100 + "%";
+}
+
+function answer(value) {
+    score += value;
+
+    contentDiv.classList.add("slide-out");
+
+    setTimeout(() => {
+        currentQuestion++;
+
+        if (currentQuestion < questions.length) {
+            showQuestion();
+            contentDiv.classList.remove("slide-out");
+        } else {
+            showResult();
+        }
+    }, 300);
+}
+
+function showResult() {
+    contentDiv.style.display = "none";
+    progressBar.style.width = "100%";
+
+    let percent = Math.round((score / questions.length) * 100);
+    let interpretation = "";
+    let levelColor = "#4e73df";
+
+    if (score <= 3) {
+        levelColor = "#28a745";
+        interpretation = `
+        <h3 class="low">Bardzo dobra kontrola</h3>
+        <p>Świetnie zarządzasz swoim czasem online. Internet jest narzędziem, a nie czymś, co przejmuje kontrolę.</p>
+        <strong>Wskazówka:</strong>
+        <p>Utrzymuj swoje dobre nawyki i dbaj o równowagę między światem online i offline.</p>
+        `;
+    } 
+    else if (score <= 6) {
+        levelColor = "#ffc107";
+        interpretation = `
+        <h3 class="medium">Umiarkowany poziom ryzyka</h3>
+        <p>Internet zaczyna mieć zauważalny wpływ na Twoje codzienne życie.</p>
+        <strong>Warto rozważyć:</strong>
+        <p>• Ustal limit czasu online<br>
+        • Wyłącz telefon przed snem<br>
+        • Planuj aktywności offline</p>
+        `;
+    } 
+    else {
+        levelColor = "#dc3545";
+        interpretation = `
+        <h3 class="high">Wysokie ryzyko utraty kontroli</h3>
+        <p>Twoje odpowiedzi wskazują na możliwy problem z kontrolą czasu online.</p>
+        <strong>Warto:</strong>
+        <p>• Porozmawiać z kimś zaufanym<br>
+        • Stopniowo ograniczać czas w sieci<br>
+        • Ustalić jasne zasady korzystania z urządzeń</p>
+        `;
+    }
+
+    resultDiv.innerHTML = `
+        <div class="risk-graphic">
+            <svg width="150" height="150">
+                <circle class="bg-circle" cx="75" cy="75" r="70"></circle>
+                <circle class="progress-circle" cx="75" cy="75" r="70"></circle>
+            </svg>
+            <div class="risk-percent">${percent}%</div>
+        </div>
+
+        <h2>Twój wynik</h2>
+        ${interpretation}
+        <button class="restart" onclick="location.reload()">Rozpocznij ponownie</button>
+    `;
+
+    resultDiv.style.display = "block";
+
+    // Animacja okręgu
+    const circle = document.querySelector(".progress-circle");
+    const radius = 70;
+    const circumference = 2 * Math.PI * radius;
+
+    circle.style.strokeDasharray = circumference;
+    circle.style.stroke = levelColor;
+
+    setTimeout(() => {
+        const offset = circumference - (percent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+    }, 200);
+}
+</script>
+
+</body>
+</html>
